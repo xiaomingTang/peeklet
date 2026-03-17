@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Peeklet",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build Peeklet",
+      "program": "${workspaceFolder}/bin/Debug/net8.0-windows10.0.19041.0/Peeklet.dll",
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    }
+  ]
+}

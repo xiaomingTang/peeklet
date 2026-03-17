@@ -1,0 +1,62 @@
+name: Tag Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PROJECT_PATH: Peeklet.csproj
+  PUBLISH_DIR: artifacts/publish
+  PACKAGE_DIR: artifacts/package
+  PACKAGE_NAME: Peeklet-${{ github.ref_name }}-win-x64.zip
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore $env:PROJECT_PATH
+
+      - name: Build Release
+        run: dotnet build $env:PROJECT_PATH --configuration Release --no-restore
+
+      - name: Publish Release Package
+        run: dotnet publish $env:PROJECT_PATH -p:PublishProfile=Properties/PublishProfiles/GitHubRelease.pubxml --output $env:PUBLISH_DIR
+
+      - name: Create release archive
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path $env:PACKAGE_DIR -Force | Out-Null
+          Compress-Archive -Path "$env:PUBLISH_DIR\*" -DestinationPath "$env:PACKAGE_DIR\$env:PACKAGE_NAME" -Force
+
+      - name: Upload published artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: peeklet-${{ github.ref_name }}
+          path: |
+            ${{ env.PUBLISH_DIR }}
+            ${{ env.PACKAGE_DIR }}/${{ env.PACKAGE_NAME }}
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: ${{ env.PACKAGE_DIR }}/${{ env.PACKAGE_NAME }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false

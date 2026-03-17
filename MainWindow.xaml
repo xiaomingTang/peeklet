@@ -1,0 +1,139 @@
+<Window x:Class="Peeklet.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:Peeklet.Controls"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+    Title="Peeklet"
+        Width="1200"
+        Height="900"
+        ResizeMode="CanResize"
+        WindowStartupLocation="Manual"
+        WindowStyle="None"
+        Background="#FBFAF7"
+        AllowsTransparency="False"
+        Deactivated="Window_Deactivated">
+  <Window.Resources>
+    <DrawingBrush x:Key="TransparencyCheckerBrush"
+                  TileMode="Tile"
+                  Viewport="0,0,24,24"
+                  ViewportUnits="Absolute"
+                  Stretch="None">
+      <DrawingBrush.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="#F3F4F6">
+            <GeometryDrawing.Geometry>
+              <RectangleGeometry Rect="0,0,24,24" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+          <GeometryDrawing Brush="#E5E7EB">
+            <GeometryDrawing.Geometry>
+              <GeometryGroup>
+                <RectangleGeometry Rect="0,0,12,12" />
+                <RectangleGeometry Rect="12,12,12,12" />
+              </GeometryGroup>
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingGroup>
+      </DrawingBrush.Drawing>
+    </DrawingBrush>
+  </Window.Resources>
+  <Border CornerRadius="20" Background="#FBFAF7" BorderBrush="#DDD6C5" BorderThickness="1" Padding="14">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <Border Grid.Row="0"
+              Background="Transparent"
+              Padding="0 0 0 10"
+              MouseLeftButtonDown="HeaderBar_MouseLeftButtonDown">
+        <StackPanel>
+          <TextBlock x:Name="TitleText"
+                     FontSize="18"
+                     FontWeight="SemiBold"
+                     Foreground="#1F2937" />
+          <TextBlock x:Name="SubtitleText"
+                     Margin="0 2 0 0"
+                     FontSize="12"
+                     Foreground="#6B7280" />
+        </StackPanel>
+      </Border>
+
+      <Grid Grid.Row="1">
+        <Border x:Name="TextHost"
+                Visibility="Collapsed"
+                Padding="8">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <TextBox x:Name="TextPreview"
+                     IsReadOnly="True"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     FontFamily="Cascadia Code"
+                     FontSize="14"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     AcceptsTab="True" />
+          </ScrollViewer>
+        </Border>
+
+        <Border x:Name="ImageHost"
+                Visibility="Collapsed"
+                CornerRadius="18"
+                Background="{StaticResource TransparencyCheckerBrush}">
+          <ScrollViewer x:Name="ImageScrollViewer"
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto"
+              PreviewMouseLeftButtonDown="ImageScrollViewer_PreviewMouseLeftButtonDown"
+              PreviewMouseLeftButtonUp="ImageScrollViewer_PreviewMouseLeftButtonUp"
+              PreviewMouseMove="ImageScrollViewer_PreviewMouseMove"
+                        PreviewMouseWheel="ImageScrollViewer_PreviewMouseWheel"
+                        SizeChanged="ImageScrollViewer_SizeChanged">
+              <Border x:Name="ImageContentHost"
+                  Padding="4"
+                    Background="Transparent">
+              <Image x:Name="ImagePreview"
+                     Stretch="Uniform"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     SnapsToDevicePixels="True">
+                <Image.LayoutTransform>
+                  <ScaleTransform x:Name="ImageZoomTransform" ScaleX="1" ScaleY="1" />
+                </Image.LayoutTransform>
+              </Image>
+            </Border>
+          </ScrollViewer>
+        </Border>
+
+        <Border x:Name="BrowserHost"
+                Visibility="Collapsed"
+                CornerRadius="18"
+                ClipToBounds="True">
+          <wv2:WebView2 x:Name="BrowserPreview" />
+        </Border>
+
+        <Border x:Name="PreviewHandlerHost"
+          Visibility="Collapsed"
+          ClipToBounds="True">
+          <controls:PreviewHandlerHostControl x:Name="NativePreviewHost" />
+        </Border>
+
+        <Border x:Name="PlaceholderHost"
+                Visibility="Collapsed"
+                Padding="24">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Preview unavailable"
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       Foreground="#1F2937" />
+            <TextBlock x:Name="PlaceholderText"
+                       Margin="0 10 0 0"
+                       FontSize="14"
+                       TextWrapping="Wrap"
+                       Foreground="#4B5563" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>
