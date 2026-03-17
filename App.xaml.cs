@@ -11,6 +11,8 @@ namespace Peeklet;
 
 public partial class App : Application
 {
+	private static readonly Uri TrayIconUri = new("pack://application:,,,/Assets/peeklet-icon.ico", UriKind.Absolute);
+
 	private GlobalKeyboardHook? _keyboardHook;
 	private PreviewController? _previewController;
 	private NotifyIcon? _notifyIcon;
@@ -31,7 +33,7 @@ public partial class App : Application
 
 		_notifyIcon = new NotifyIcon
 		{
-			Icon = SystemIcons.Application,
+			Icon = LoadTrayIcon(),
 			Visible = true,
 			Text = "Peeklet"
 		};
@@ -116,5 +118,25 @@ public partial class App : Application
 				Debug.WriteLine(ex);
 			}
 		});
+	}
+
+	private static Icon LoadTrayIcon()
+	{
+		try
+		{
+			var resourceStream = GetResourceStream(TrayIconUri);
+			if (resourceStream?.Stream is null)
+			{
+				return (Icon)SystemIcons.Application.Clone();
+			}
+
+			using var stream = resourceStream.Stream;
+			using var icon = new Icon(stream);
+			return (Icon)icon.Clone();
+		}
+		catch
+		{
+			return (Icon)SystemIcons.Application.Clone();
+		}
 	}
 }

@@ -8,11 +8,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Peeklet</AssemblyName>
     <RootNamespace>Peeklet</RootNamespace>
+    <ApplicationIcon>Assets\peeklet-icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.37.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\peeklet-icon.ico" />
   </ItemGroup>
   
 </Project>

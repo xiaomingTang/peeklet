@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="stroke" x1="54" y1="42" x2="192" y2="210" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#155E75"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="101" y1="112" x2="157" y2="168" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M59 30H147L199 82V190C199 199.941 190.941 208 181 208H59C49.0589 208 41 199.941 41 190V48C41 38.0589 49.0589 30 59 30Z" fill="#FFFDF8" id="element-1773784949379" transform="translate(13.278923034667969, 8.981643676757812)"/>
+  <path d="M59 30H147L199 82V190C199 199.941 190.941 208 181 208H59C49.0589 208 41 199.941 41 190V48C41 38.0589 49.0589 30 59 30Z" stroke="url(#stroke)" stroke-width="14" stroke-linejoin="round" id="element-1773784890724" transform="translate(11.979103088378906, 9.583282470703125)"/>
+  <path d="M147 30V70C147 79.9411 155.059 88 165 88H199" fill="url(#stroke)" id="element-1773784928947" transform="translate(8.385360717773438, 10.182243347167969)"/>
+  <path d="M147 30V70C147 79.9411 155.059 88 165 88H199" stroke="url(#stroke)" stroke-width="14" stroke-linejoin="round" id="element-1773784925147" transform="translate(5.98956298828125, 14.973884582519531)"/>
+
+  <circle cx="121" cy="136" r="25" fill="#FFFDF8" stroke="url(#stroke)" stroke-width="14" id="element-1773784884593" transform="translate(-0.5989532470703125, 6.5885162353515625)"/>
+  <path d="M138 153L169 184" stroke="url(#stroke)" stroke-width="14" stroke-linecap="round" id="element-1773784956027" transform="translate(-0.0000152587890625, 7.7864227294921875)"/>
+  <circle cx="121" cy="136" r="9" fill="url(#lens)" id="element-1773784964934" transform="translate(0, 6.5885162353515625)"/>
+</svg>

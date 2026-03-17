@@ -4,6 +4,7 @@
   xmlns:controls="clr-namespace:Peeklet.Controls"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     Title="Peeklet"
+  Icon="Assets/peeklet-icon.ico"
         Width="1200"
         Height="900"
         ResizeMode="CanResize"
