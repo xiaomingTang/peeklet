@@ -61,11 +61,15 @@ public partial class MainWindow : Window
 
     public void ApplyPlacement(PreviewPlacement placement)
     {
-        var dpi = VisualTreeHelper.GetDpi(this);
-        Left = placement.Left / dpi.DpiScaleX;
-        Top = placement.Top / dpi.DpiScaleY;
-        Width = placement.Width / dpi.DpiScaleX;
-        Height = placement.Height / dpi.DpiScaleY;
+        var hwnd = new WindowInteropHelper(this).EnsureHandle();
+        NativeMethods.SetWindowPos(
+            hwnd,
+            IntPtr.Zero,
+            (int)Math.Round(placement.Left),
+            (int)Math.Round(placement.Top),
+            (int)Math.Round(placement.Width),
+            (int)Math.Round(placement.Height),
+            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
     }
 
     public async Task ShowContentAsync(PreviewContent content)

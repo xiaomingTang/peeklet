@@ -9,6 +9,8 @@
     <AssemblyName>Peeklet</AssemblyName>
     <RootNamespace>Peeklet</RootNamespace>
     <ApplicationIcon>Assets\peeklet-icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
 
   <ItemGroup>

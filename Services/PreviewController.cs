@@ -152,14 +152,27 @@ public sealed class PreviewController
 
     private static ScreenRect GetWorkingArea(ScreenRect anchorRect)
     {
-        foreach (var screen in System.Windows.Forms.Screen.AllScreens)
+        var anchorCenter = new NativeMethods.Point
         {
-            if (anchorRect.Left >= screen.WorkingArea.Left
-                && anchorRect.Left <= screen.WorkingArea.Right
-                && anchorRect.Top >= screen.WorkingArea.Top
-                && anchorRect.Top <= screen.WorkingArea.Bottom)
+            X = (int)Math.Round(anchorRect.Left + (anchorRect.Width / 2)),
+            Y = (int)Math.Round(anchorRect.Top + (anchorRect.Height / 2))
+        };
+
+        var monitor = NativeMethods.MonitorFromPoint(anchorCenter, NativeMethods.MONITOR_DEFAULTTONEAREST);
+        if (monitor != IntPtr.Zero)
+        {
+            var monitorInfo = new NativeMethods.MonitorInfo
             {
-                return new ScreenRect(screen.WorkingArea.Left, screen.WorkingArea.Top, screen.WorkingArea.Width, screen.WorkingArea.Height);
+                cbSize = System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>()
+            };
+
+            if (NativeMethods.GetMonitorInfo(monitor, ref monitorInfo))
+            {
+                return new ScreenRect(
+                    monitorInfo.rcWork.Left,
+                    monitorInfo.rcWork.Top,
+                    monitorInfo.rcWork.Right - monitorInfo.rcWork.Left,
+                    monitorInfo.rcWork.Bottom - monitorInfo.rcWork.Top);
             }
         }
 
