@@ -39,10 +39,8 @@ public partial class App : Application
 		};
 
 		var menu = new ContextMenuStrip();
-		menu.Items.Add("Open Peeklet", null, async (_, _) => await _previewController.ShowFromExplorerSelectionAsync());
 		menu.Items.Add("Exit", null, (_, _) => Shutdown());
 		_notifyIcon.ContextMenuStrip = menu;
-		_notifyIcon.DoubleClick += async (_, _) => await _previewController.ShowFromExplorerSelectionAsync();
 
 		if (Debugger.IsAttached)
 		{
