@@ -18,6 +18,7 @@ public partial class App : Application
 	protected override void OnStartup(StartupEventArgs e)
 	{
 		base.OnStartup(e);
+		StartupRegistrationService.EnsureRegistered();
 
 		_previewController = new PreviewController();
 		_ = WebViewEnvironmentProvider.PreloadAsync();
