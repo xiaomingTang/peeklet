@@ -29,6 +29,24 @@ public sealed class PreviewHandlerHostControl : HwndHost
         UnloadPreviewHandler();
     }
 
+    public bool FocusPreview()
+    {
+        if (_previewHandler is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            _previewHandler.SetFocus();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     protected override HandleRef BuildWindowCore(HandleRef hwndParent)
     {
         _hostHwnd = NativeMethods.CreateWindowEx(

@@ -134,6 +134,8 @@ public partial class MainWindow : Window
                 PlaceholderHost.Visibility = Visibility.Visible;
                 break;
         }
+
+        QueuePreviewSurfaceFocus();
     }
 
     public void BringToFront()
@@ -153,16 +155,17 @@ public partial class MainWindow : Window
             WindowState = WindowState.Normal;
         }
 
+        var hwnd = new WindowInteropHelper(this).EnsureHandle();
+
         Topmost = true;
         Activate();
         Focus();
+        ForceActivateWindow(hwnd);
         Topmost = false;
 
-        var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
-            NativeMethods.ShowWindow(hwnd, NativeMethods.SW_RESTORE);
-            NativeMethods.SetForegroundWindow(hwnd);
+            QueuePreviewSurfaceFocus();
         }
     }
 
@@ -221,6 +224,79 @@ public partial class MainWindow : Window
     private void Window_Deactivated(object sender, EventArgs e)
     {
         CloseRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void FocusPreviewSurface()
+    {
+        if (_isClosing || !IsVisible)
+        {
+            return;
+        }
+
+        if (PreviewHandlerHost.Visibility == Visibility.Visible && NativePreviewHost.FocusPreview())
+        {
+            return;
+        }
+
+        if (BrowserHost.Visibility == Visibility.Visible && BrowserPreview.Focus())
+        {
+            Keyboard.Focus(BrowserPreview);
+            return;
+        }
+
+        if (TextHost.Visibility == Visibility.Visible && TextPreview.Focus())
+        {
+            Keyboard.Focus(TextPreview);
+            return;
+        }
+
+        if (ImageHost.Visibility == Visibility.Visible && ImageScrollViewer.Focus())
+        {
+            Keyboard.Focus(ImageScrollViewer);
+            return;
+        }
+
+        Keyboard.Focus(this);
+    }
+
+    private void QueuePreviewSurfaceFocus()
+    {
+        Dispatcher.BeginInvoke(FocusPreviewSurface, DispatcherPriority.Input);
+    }
+
+    private static void ForceActivateWindow(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var foregroundWindow = NativeMethods.GetForegroundWindow();
+        var currentThreadId = NativeMethods.GetCurrentThreadId();
+        var foregroundThreadId = foregroundWindow != IntPtr.Zero
+            ? NativeMethods.GetWindowThreadProcessId(foregroundWindow, out _)
+            : 0;
+        var attached = false;
+
+        try
+        {
+            if (foregroundThreadId != 0 && foregroundThreadId != currentThreadId)
+            {
+                attached = NativeMethods.AttachThreadInput(foregroundThreadId, currentThreadId, true);
+            }
+
+            NativeMethods.ShowWindow(hwnd, NativeMethods.SW_RESTORE);
+            NativeMethods.BringWindowToTop(hwnd);
+            NativeMethods.SetForegroundWindow(hwnd);
+            NativeMethods.SetActiveWindow(hwnd);
+        }
+        finally
+        {
+            if (attached)
+            {
+                NativeMethods.AttachThreadInput(foregroundThreadId, currentThreadId, false);
+            }
+        }
     }
 
     private void ImageScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
