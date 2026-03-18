@@ -28,7 +28,7 @@ internal static class StartupRegistrationService
 			return;
 		}
 
-		var command = Quote(executablePath);
+		var command = $"{Quote(executablePath)} {AppLaunchArguments.Background}";
 
 		using var runKey = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true)
 			?? Registry.CurrentUser.CreateSubKey(RunKeyPath, writable: true);
