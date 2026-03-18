@@ -28,7 +28,7 @@
 
   <Target Name="BuildUninstaller" AfterTargets="Build">
     <MSBuild Projects="Uninstaller\Peeklet.Uninstaller.csproj"
-             Targets="Build"
+             Targets="Restore;Build"
              Properties="Configuration=$(Configuration);Platform=$(Platform)" />
 
     <ItemGroup>
