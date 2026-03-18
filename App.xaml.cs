@@ -36,6 +36,7 @@ public partial class App : Application
 		}
 
 		StartupRegistrationService.EnsureRegistered();
+		StartupRegistrationService.EnsureUninstallRegistered();
 
 		_previewController = new PreviewController();
 		_ = WebViewEnvironmentProvider.PreloadAsync();
