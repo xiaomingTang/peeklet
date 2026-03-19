@@ -119,20 +119,68 @@
           <controls:PreviewHandlerHostControl x:Name="NativePreviewHost" />
         </Border>
 
+        <Border x:Name="LoadingHost"
+                Visibility="Collapsed"
+                Padding="32">
+          <Border Background="#EEF4FF"
+                  BorderBrush="#B8CCF8"
+                  BorderThickness="1"
+                  CornerRadius="20"
+                  Padding="28">
+            <StackPanel MaxWidth="420"
+                        VerticalAlignment="Center">
+              <TextBlock Text="Loading preview"
+                         FontSize="13"
+                         FontWeight="SemiBold"
+                         Foreground="#3157A5" />
+              <TextBlock Text="Preparing a render surface for this file"
+                         Margin="0 8 0 0"
+                         FontSize="28"
+                         FontWeight="SemiBold"
+                         Foreground="#102A43"
+                         TextWrapping="Wrap" />
+              <ProgressBar Margin="0 18 0 0"
+                           Height="5"
+                           IsIndeterminate="True"
+                           Foreground="#4F7DDC"
+                           Background="#DCE7FB" />
+              <TextBlock x:Name="LoadingMessageText"
+                         Margin="0 14 0 0"
+                         FontSize="14"
+                         TextWrapping="Wrap"
+                         Foreground="#486581" />
+            </StackPanel>
+          </Border>
+        </Border>
+
         <Border x:Name="PlaceholderHost"
                 Visibility="Collapsed"
                 Padding="24">
-          <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="Preview unavailable"
-                       FontSize="24"
-                       FontWeight="SemiBold"
-                       Foreground="#1F2937" />
-            <TextBlock x:Name="PlaceholderText"
-                       Margin="0 10 0 0"
-                       FontSize="14"
-                       TextWrapping="Wrap"
-                       Foreground="#4B5563" />
-          </StackPanel>
+          <Border Background="#FFF5F0"
+                  BorderBrush="#E8B4A2"
+                  BorderThickness="1"
+                  CornerRadius="20"
+                  Padding="28">
+            <StackPanel MaxWidth="420"
+                        VerticalAlignment="Center">
+              <TextBlock Text="Unsupported preview"
+                         FontSize="13"
+                         FontWeight="SemiBold"
+                         Foreground="#A23E2A" />
+              <TextBlock x:Name="PlaceholderTitleText"
+                         Margin="0 8 0 0"
+                         FontSize="28"
+                         FontWeight="SemiBold"
+                         Foreground="#4A1F14"
+                         TextWrapping="Wrap"
+                         Text="This file cannot be rendered here" />
+              <TextBlock x:Name="PlaceholderText"
+                         Margin="0 14 0 0"
+                         FontSize="14"
+                         TextWrapping="Wrap"
+                         Foreground="#7C2D12" />
+            </StackPanel>
+          </Border>
         </Border>
       </Grid>
     </Grid>

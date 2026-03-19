@@ -68,9 +68,10 @@ public partial class MainWindow : Window
         ImageHost.Visibility = Visibility.Collapsed;
         BrowserHost.Visibility = Visibility.Collapsed;
         PreviewHandlerHost.Visibility = Visibility.Collapsed;
+        LoadingHost.Visibility = Visibility.Collapsed;
+        PlaceholderHost.Visibility = Visibility.Collapsed;
 
-        PlaceholderText.Text = message;
-        PlaceholderHost.Visibility = Visibility.Visible;
+        ShowLoadingPlaceholder(message);
     }
 
     public void ApplyPlacement(PreviewPlacement placement)
@@ -105,6 +106,7 @@ public partial class MainWindow : Window
         ImageHost.Visibility = Visibility.Collapsed;
         BrowserHost.Visibility = Visibility.Collapsed;
         PreviewHandlerHost.Visibility = Visibility.Collapsed;
+        LoadingHost.Visibility = Visibility.Collapsed;
         PlaceholderHost.Visibility = Visibility.Collapsed;
 
         switch (content.SurfaceType)
@@ -139,13 +141,15 @@ public partial class MainWindow : Window
                     break;
                 }
 
-                PlaceholderText.Text = "Failed to load the registered Windows Preview Handler for this file.";
-                PlaceholderHost.Visibility = Visibility.Visible;
+                ShowUnsupportedPlaceholder(
+                    "Registered preview handler failed",
+                    "Failed to load the registered Windows Preview Handler for this file.");
                 break;
 
             default:
-                PlaceholderText.Text = content.PlaceholderMessage ?? string.Empty;
-                PlaceholderHost.Visibility = Visibility.Visible;
+                ShowUnsupportedPlaceholder(
+                    "This file cannot be rendered here",
+                    content.PlaceholderMessage ?? string.Empty);
                 break;
         }
 
@@ -205,6 +209,19 @@ public partial class MainWindow : Window
         image.EndInit();
         image.Freeze();
         return image;
+    }
+
+    private void ShowLoadingPlaceholder(string message)
+    {
+        LoadingMessageText.Text = message;
+        LoadingHost.Visibility = Visibility.Visible;
+    }
+
+    private void ShowUnsupportedPlaceholder(string title, string message)
+    {
+        PlaceholderTitleText.Text = title;
+        PlaceholderText.Text = message;
+        PlaceholderHost.Visibility = Visibility.Visible;
     }
 
     private async Task<WebView2> CreateBrowserPreviewAsync()
