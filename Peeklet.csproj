@@ -45,7 +45,8 @@
 
   <Target Name="PublishUninstaller" AfterTargets="Publish">
     <PropertyGroup>
-      <UninstallerPublishDir>$(IntermediateOutputPath)UninstallerPublish\</UninstallerPublishDir>
+      <UninstallerPublishDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)UninstallerPublish\'))</UninstallerPublishDir>
+      <UninstallerPublishDir>$([MSBuild]::EnsureTrailingSlash('$(UninstallerPublishDir)'))</UninstallerPublishDir>
     </PropertyGroup>
 
     <MSBuild Projects="Uninstaller\Peeklet.Uninstaller.csproj"
