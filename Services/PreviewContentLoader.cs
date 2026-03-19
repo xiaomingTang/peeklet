@@ -8,6 +8,7 @@ namespace Peeklet.Services;
 public sealed class PreviewContentLoader
 {
     private const int MaxTextLength = 512 * 1024;
+    private const int BinaryDetectionSampleLength = 4096;
 
     public async Task<PreviewContent> LoadAsync(PreviewRequest request, CancellationToken cancellationToken)
     {
@@ -19,7 +20,7 @@ public sealed class PreviewContentLoader
             PreviewContentKind.Pdf => await BuildPdfContentAsync(request, cancellationToken),
             PreviewContentKind.Svg => BuildBrowserContent(request, "SVG preview"),
             PreviewContentKind.Office => BuildOfficeContent(request),
-            _ => BuildUnsupported(request)
+            _ => await BuildUnknownContentAsync(request, cancellationToken)
         };
     }
 
@@ -34,17 +35,28 @@ public sealed class PreviewContentLoader
 
     private static async Task<PreviewContent> BuildTextContentAsync(PreviewRequest request, CancellationToken cancellationToken)
     {
-        await using var stream = File.Open(request.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var reader = new StreamReader(stream, Encoding.UTF8, true);
-        var buffer = new char[MaxTextLength];
-        var read = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
-        var text = new string(buffer, 0, read);
+        var text = await ReadTextContentAsync(request.FilePath, cancellationToken);
 
         return new PreviewContent(
             SurfaceType: PreviewSurfaceType.Text,
             Title: request.FileName,
             Subtitle: FormatSubtitle(request),
             TextContent: text);
+    }
+
+    private static async Task<PreviewContent> BuildUnknownContentAsync(PreviewRequest request, CancellationToken cancellationToken)
+    {
+        var text = await TryReadTextFallbackAsync(request.FilePath, cancellationToken);
+        if (text is not null)
+        {
+            return new PreviewContent(
+                SurfaceType: PreviewSurfaceType.Text,
+                Title: request.FileName,
+                Subtitle: $"Plain text fallback  {FormatSubtitle(request)}",
+                TextContent: text);
+        }
+
+        return BuildUnsupported(request);
     }
 
     private static async Task<PreviewContent> BuildMarkdownContentAsync(PreviewRequest request, CancellationToken cancellationToken)
@@ -154,5 +166,59 @@ public sealed class PreviewContentLoader
     private static string FormatSubtitle(PreviewRequest request)
     {
         return $"{request.Extension.ToLowerInvariant()}  {request.FileSize / 1024.0:F1} KB  {request.LastWriteTime.LocalDateTime:yyyy-MM-dd HH:mm}";
+    }
+
+    private static async Task<string?> TryReadTextFallbackAsync(string filePath, CancellationToken cancellationToken)
+    {
+        await using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        var sampleLength = (int)Math.Min(stream.Length, BinaryDetectionSampleLength);
+        var sample = new byte[sampleLength];
+        var read = await stream.ReadAsync(sample.AsMemory(0, sampleLength), cancellationToken);
+
+        if (!LooksLikeText(sample.AsSpan(0, read)))
+        {
+            return null;
+        }
+
+        stream.Position = 0;
+        return await ReadTextContentAsync(stream, cancellationToken);
+    }
+
+    private static async Task<string> ReadTextContentAsync(string filePath, CancellationToken cancellationToken)
+    {
+        await using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        return await ReadTextContentAsync(stream, cancellationToken);
+    }
+
+    private static async Task<string> ReadTextContentAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        using var reader = new StreamReader(stream, Encoding.Default, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+        var buffer = new char[MaxTextLength];
+        var read = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+        return new string(buffer, 0, read);
+    }
+
+    private static bool LooksLikeText(ReadOnlySpan<byte> sample)
+    {
+        if (sample.IsEmpty)
+        {
+            return true;
+        }
+
+        var suspiciousByteCount = 0;
+        foreach (var value in sample)
+        {
+            if (value == 0)
+            {
+                return false;
+            }
+
+            if (value < 32 && value is not (byte)'\r' and not (byte)'\n' and not (byte)'\t' and not 12)
+            {
+                suspiciousByteCount++;
+            }
+        }
+
+        return suspiciousByteCount * 20 <= sample.Length;
     }
 }
