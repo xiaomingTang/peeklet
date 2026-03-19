@@ -48,7 +48,10 @@
       <UninstallerPublishDir>$(IntermediateOutputPath)UninstallerPublish\</UninstallerPublishDir>
     </PropertyGroup>
 
-    <Exec Command='dotnet publish &quot;Uninstaller\Peeklet.Uninstaller.csproj&quot; -c $(Configuration) -r $(RuntimeIdentifier) -p:SelfContained=$(SelfContained) -p:PublishSingleFile=true -p:PublishTrimmed=true -p:DebugType=none -p:DebugSymbols=false -o &quot;$(UninstallerPublishDir)&quot;' />
+    <MSBuild Projects="Uninstaller\Peeklet.Uninstaller.csproj"
+             Targets="Restore;Publish"
+             RemoveProperties="PublishProfile"
+             Properties="Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishSingleFile=true;PublishTrimmed=true;DebugType=none;DebugSymbols=false;PublishDir=$(UninstallerPublishDir)" />
 
     <ItemGroup>
       <PublishedUninstallerArtifacts Include="$(UninstallerPublishDir)Peeklet.Uninstaller.exe" />
