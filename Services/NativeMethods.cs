@@ -70,6 +70,10 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool GetWindowRect(IntPtr hWnd, out Rect rect);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -149,5 +153,40 @@ internal static class NativeMethods
         public uint flags;
         public uint time;
         public IntPtr dwExtraInfo;
+    }
+
+    internal static void ForceActivateWindow(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || !IsWindow(hwnd))
+        {
+            return;
+        }
+
+        var foregroundWindow = GetForegroundWindow();
+        var currentThreadId = GetCurrentThreadId();
+        var foregroundThreadId = foregroundWindow != IntPtr.Zero
+            ? GetWindowThreadProcessId(foregroundWindow, out _)
+            : 0;
+        var attached = false;
+
+        try
+        {
+            if (foregroundThreadId != 0 && foregroundThreadId != currentThreadId)
+            {
+                attached = AttachThreadInput(foregroundThreadId, currentThreadId, true);
+            }
+
+            ShowWindow(hwnd, SW_RESTORE);
+            BringWindowToTop(hwnd);
+            SetForegroundWindow(hwnd);
+            SetActiveWindow(hwnd);
+        }
+        finally
+        {
+            if (attached)
+            {
+                AttachThreadInput(foregroundThreadId, currentThreadId, false);
+            }
+        }
     }
 }

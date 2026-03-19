@@ -174,7 +174,7 @@ public partial class MainWindow : Window
         Topmost = true;
         Activate();
         Focus();
-        ForceActivateWindow(hwnd);
+        NativeMethods.ForceActivateWindow(hwnd);
         Topmost = false;
 
         if (hwnd != IntPtr.Zero)
@@ -362,41 +362,6 @@ public partial class MainWindow : Window
     private void QueuePreviewSurfaceFocus()
     {
         Dispatcher.BeginInvoke(FocusPreviewSurface, DispatcherPriority.Input);
-    }
-
-    private static void ForceActivateWindow(IntPtr hwnd)
-    {
-        if (hwnd == IntPtr.Zero)
-        {
-            return;
-        }
-
-        var foregroundWindow = NativeMethods.GetForegroundWindow();
-        var currentThreadId = NativeMethods.GetCurrentThreadId();
-        var foregroundThreadId = foregroundWindow != IntPtr.Zero
-            ? NativeMethods.GetWindowThreadProcessId(foregroundWindow, out _)
-            : 0;
-        var attached = false;
-
-        try
-        {
-            if (foregroundThreadId != 0 && foregroundThreadId != currentThreadId)
-            {
-                attached = NativeMethods.AttachThreadInput(foregroundThreadId, currentThreadId, true);
-            }
-
-            NativeMethods.ShowWindow(hwnd, NativeMethods.SW_RESTORE);
-            NativeMethods.BringWindowToTop(hwnd);
-            NativeMethods.SetForegroundWindow(hwnd);
-            NativeMethods.SetActiveWindow(hwnd);
-        }
-        finally
-        {
-            if (attached)
-            {
-                NativeMethods.AttachThreadInput(foregroundThreadId, currentThreadId, false);
-            }
-        }
     }
 
     private void ImageScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)

@@ -158,7 +158,7 @@ public partial class App : Application
 			return;
 		}
 
-		_previewController.ClosePreview();
+		_previewController.ClosePreview(restoreFocus: true);
 	}
 
 	private void QueuePreviewAction(Func<Task> action)

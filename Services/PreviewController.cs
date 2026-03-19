@@ -25,7 +25,7 @@ public sealed class PreviewController
                 return;
             }
 
-            ClosePreview();
+            ClosePreview(restoreFocus: IsPreviewForeground());
             return;
         }
 
@@ -82,7 +82,7 @@ public sealed class PreviewController
         await ShowFileAsync(previousFile, _selectionContext.AnchorRect);
     }
 
-    public void ClosePreview()
+    public void ClosePreview(bool restoreFocus = false)
     {
         if (_window is null)
         {
@@ -91,11 +91,17 @@ public sealed class PreviewController
 
         _showOperationId++;
         var window = _window;
+        var sourceWindowHandle = _selectionContext?.SourceWindowHandle ?? IntPtr.Zero;
         _window = null;
         _selectionContext = null;
         if (!window.IsClosing)
         {
             window.Close();
+        }
+
+        if (restoreFocus)
+        {
+            NativeMethods.ForceActivateWindow(sourceWindowHandle);
         }
     }
 

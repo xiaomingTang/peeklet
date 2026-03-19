@@ -1,9 +1,12 @@
+using System;
+
 namespace Peeklet.Models;
 
 public sealed record PreviewSelectionContext(
     IReadOnlyList<string> Files,
     int SelectedIndex,
-    ScreenRect AnchorRect)
+    ScreenRect AnchorRect,
+    IntPtr SourceWindowHandle)
 {
     public string SelectedFilePath => Files[SelectedIndex];
 

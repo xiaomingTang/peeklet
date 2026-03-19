@@ -25,13 +25,17 @@ public sealed class ExplorerSelectionService
 
         if (TryGetExplorerSelection(foregroundWindow, out var selectedPath, out var files) && !string.IsNullOrWhiteSpace(selectedPath))
         {
-            context = BuildSelectionContext(selectedPath, files, TryGetSelectedItemRect(foregroundWindow) ?? GetWindowRect(foregroundWindow));
+            context = BuildSelectionContext(
+                selectedPath,
+                files,
+                TryGetSelectedItemRect(foregroundWindow) ?? GetWindowRect(foregroundWindow),
+                foregroundWindow);
             return true;
         }
 
         if (TryGetDesktopSelection(foregroundWindow, out selectedPath, out files, out var anchorRect) && !string.IsNullOrWhiteSpace(selectedPath))
         {
-            context = BuildSelectionContext(selectedPath, files, anchorRect);
+            context = BuildSelectionContext(selectedPath, files, anchorRect, foregroundWindow);
             return true;
         }
 
@@ -274,7 +278,7 @@ public sealed class ExplorerSelectionService
         return new ScreenRect(anchorLeft, anchorTop, DesktopCursorAnchorWidth, DesktopCursorAnchorHeight);
     }
 
-    private static PreviewSelectionContext BuildSelectionContext(string selectedPath, List<string> files, ScreenRect anchorRect)
+    private static PreviewSelectionContext BuildSelectionContext(string selectedPath, List<string> files, ScreenRect anchorRect, IntPtr sourceWindowHandle)
     {
         var selectedIndex = files.FindIndex(path => string.Equals(path, selectedPath, StringComparison.OrdinalIgnoreCase));
         if (selectedIndex < 0)
@@ -283,7 +287,7 @@ public sealed class ExplorerSelectionService
             selectedIndex = 0;
         }
 
-        return new PreviewSelectionContext(files, selectedIndex, anchorRect);
+        return new PreviewSelectionContext(files, selectedIndex, anchorRect, sourceWindowHandle);
     }
 
     private static DesktopViewCandidate? FindDesktopViewForCursor(IntPtr hwnd)
