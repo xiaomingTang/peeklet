@@ -2,11 +2,12 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.Wpf;
 using Peeklet.Models;
 using Peeklet.Services;
 
@@ -14,6 +15,8 @@ namespace Peeklet;
 
 public partial class MainWindow : Window
 {
+    private const int DeactivationCloseDelayMilliseconds = 150;
+    private static readonly TimeSpan AutoCloseResumeGracePeriod = TimeSpan.FromMilliseconds(300);
     private const double MinImageZoom = 1.0;
     private const double MaxImageZoom = 6.0;
     private const double ImageZoomStep = 0.15;
@@ -21,9 +24,13 @@ public partial class MainWindow : Window
     private double _imageZoom = 1.0;
     private bool _isClosing;
     private bool _isImagePanning;
+    private int _autoCloseSuppressionCount;
+    private int _deactivationSequence;
     private System.Windows.Point _imagePanStartPoint;
     private double _imagePanStartHorizontalOffset;
     private double _imagePanStartVerticalOffset;
+    private DateTime _suppressAutoCloseUntilUtc = DateTime.MinValue;
+    private WebView2? _browserPreview;
 
     public bool IsClosing => _isClosing;
 
@@ -32,6 +39,13 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+    }
+
+    public IDisposable SuppressAutoClose()
+    {
+        _autoCloseSuppressionCount++;
+        _deactivationSequence++;
+        return new AutoCloseSuppression(this);
     }
 
     public void ShowLoadingState(string title, string subtitle, string message)
@@ -46,7 +60,7 @@ public partial class MainWindow : Window
 
         ResetImageZoom();
         NativePreviewHost.ClearPreview();
-        BrowserPreview.Source = null;
+        ResetBrowserPreview();
         ImagePreview.Source = null;
         TextPreview.Text = string.Empty;
 
@@ -83,7 +97,7 @@ public partial class MainWindow : Window
         SubtitleText.Text = content.Subtitle;
 
         NativePreviewHost.ClearPreview();
-        BrowserPreview.Source = null;
+        ResetBrowserPreview();
         ImagePreview.Source = null;
         TextPreview.Text = string.Empty;
 
@@ -108,13 +122,13 @@ public partial class MainWindow : Window
                 break;
 
             case PreviewSurfaceType.Browser:
-                await EnsureWebViewReadyAsync();
+                var browserPreview = await CreateBrowserPreviewAsync();
                 if (_isClosing)
                 {
                     return;
                 }
 
-                BrowserPreview.Source = new Uri(content.NavigateTo!);
+                browserPreview.Source = new Uri(NormalizeBrowserTarget(content.NavigateTo!));
                 BrowserHost.Visibility = Visibility.Visible;
                 break;
 
@@ -172,7 +186,14 @@ public partial class MainWindow : Window
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         _isClosing = true;
+        ResetBrowserPreview();
         base.OnClosing(e);
+    }
+
+    protected override void OnActivated(EventArgs e)
+    {
+        _deactivationSequence++;
+        base.OnActivated(e);
     }
 
     private static BitmapImage CreateBitmap(string imagePath)
@@ -186,23 +207,62 @@ public partial class MainWindow : Window
         return image;
     }
 
-    private async Task EnsureWebViewReadyAsync()
+    private async Task<WebView2> CreateBrowserPreviewAsync()
     {
-        if (BrowserPreview.CoreWebView2 is not null)
-        {
-            return;
-        }
+        ResetBrowserPreview();
+
+        var browserPreview = new WebView2();
+        BrowserViewHost.Children.Add(browserPreview);
+        _browserPreview = browserPreview;
 
         var environment = await WebViewEnvironmentProvider.GetAsync();
-        await BrowserPreview.EnsureCoreWebView2Async(environment);
-        var coreWebView = BrowserPreview.CoreWebView2;
-        if (coreWebView is null)
+        await browserPreview.EnsureCoreWebView2Async(environment);
+
+        var coreWebView = browserPreview.CoreWebView2!;
+        coreWebView.Settings.AreDefaultContextMenusEnabled = false;
+        coreWebView.Settings.AreDevToolsEnabled = false;
+
+        return browserPreview;
+    }
+
+    private void ResetBrowserPreview()
+    {
+        if (_browserPreview is null)
         {
+            BrowserViewHost.Children.Clear();
             return;
         }
 
-        coreWebView.Settings.AreDefaultContextMenusEnabled = false;
-        coreWebView.Settings.AreDevToolsEnabled = false;
+        try
+        {
+            _browserPreview.CoreWebView2?.Stop();
+            _browserPreview.Source = null;
+        }
+        catch
+        {
+        }
+
+        BrowserViewHost.Children.Clear();
+
+        try
+        {
+            _browserPreview.Dispose();
+        }
+        catch
+        {
+        }
+
+        _browserPreview = null;
+    }
+
+    private static string NormalizeBrowserTarget(string target)
+    {
+        if (Uri.TryCreate(target, UriKind.Absolute, out var absoluteUri))
+        {
+            return absoluteUri.AbsoluteUri;
+        }
+
+        return new Uri(Path.GetFullPath(target)).AbsoluteUri;
     }
 
     private void HeaderBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -221,9 +281,49 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Window_Deactivated(object sender, EventArgs e)
+    private async void Window_Deactivated(object sender, EventArgs e)
     {
+        if (ShouldIgnoreAutoClose())
+        {
+            return;
+        }
+
+        var deactivationSequence = ++_deactivationSequence;
+        await Task.Delay(DeactivationCloseDelayMilliseconds);
+
+        if (_isClosing || deactivationSequence != _deactivationSequence || ShouldIgnoreAutoClose())
+        {
+            return;
+        }
+
         CloseRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool ShouldIgnoreAutoClose()
+    {
+        if (_autoCloseSuppressionCount > 0)
+        {
+            return true;
+        }
+
+        if (DateTime.UtcNow < _suppressAutoCloseUntilUtc)
+        {
+            return true;
+        }
+
+        return IsActive;
+    }
+
+    private void ReleaseAutoCloseSuppression()
+    {
+        if (_autoCloseSuppressionCount == 0)
+        {
+            return;
+        }
+
+        _autoCloseSuppressionCount--;
+        _deactivationSequence++;
+        _suppressAutoCloseUntilUtc = DateTime.UtcNow + AutoCloseResumeGracePeriod;
     }
 
     private void FocusPreviewSurface()
@@ -238,9 +338,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (BrowserHost.Visibility == Visibility.Visible && BrowserPreview.Focus())
+        if (BrowserHost.Visibility == Visibility.Visible && _browserPreview is not null && _browserPreview.Focus())
         {
-            Keyboard.Focus(BrowserPreview);
+            Keyboard.Focus(_browserPreview);
             return;
         }
 
@@ -439,5 +539,21 @@ public partial class MainWindow : Window
         var visibility = enabled ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
         ImageScrollViewer.HorizontalScrollBarVisibility = visibility;
         ImageScrollViewer.VerticalScrollBarVisibility = visibility;
+    }
+
+    private sealed class AutoCloseSuppression : IDisposable
+    {
+        private MainWindow? _window;
+
+        public AutoCloseSuppression(MainWindow window)
+        {
+            _window = window;
+        }
+
+        public void Dispose()
+        {
+            var window = Interlocked.Exchange(ref _window, null);
+            window?.ReleaseAutoCloseSuppression();
+        }
     }
 }

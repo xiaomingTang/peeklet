@@ -1,6 +1,6 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
-using System.Windows.Forms;
 
 const string ProductName = "Peeklet";
 const string StartupValueName = "Peeklet";
@@ -10,8 +10,13 @@ const string MainExecutableName = "Peeklet.exe";
 const string UninstallerExecutableName = "Peeklet.Uninstaller.exe";
 const string ConfirmedArgument = "--confirmed";
 
-Application.EnableVisualStyles();
-Application.SetCompatibleTextRenderingDefault(false);
+const uint MbOk = 0x00000000;
+const uint MbYesNo = 0x00000004;
+const uint MbIconError = 0x00000010;
+const uint MbIconWarning = 0x00000030;
+const uint MbIconInformation = 0x00000040;
+const uint MbDefButton2 = 0x00000100;
+const int IdYes = 6;
 
 var baseDirectory = AppContext.BaseDirectory;
 var mainExecutablePath = Path.Combine(baseDirectory, MainExecutableName);
@@ -20,24 +25,21 @@ var isConfirmed = args.Contains(ConfirmedArgument, StringComparer.OrdinalIgnoreC
 
 if (!File.Exists(uninstallerPath) || !File.Exists(mainExecutablePath))
 {
-	MessageBox.Show(
+	ShowMessage(
 		"当前目录不包含完整的 Peeklet 安装文件，已取消卸载。",
 		"卸载 Peeklet",
-		MessageBoxButtons.OK,
-		MessageBoxIcon.Error);
+		MbOk | MbIconError);
 	return;
 }
 
 if (!isConfirmed)
 {
-	var confirmResult = MessageBox.Show(
+	var confirmResult = ShowMessage(
 		$"这将关闭 {ProductName}、移除开机自启动，并删除以下目录中的所有文件：\n\n{baseDirectory}\n\n是否继续？",
 		$"卸载 {ProductName}",
-		MessageBoxButtons.YesNo,
-		MessageBoxIcon.Warning,
-		MessageBoxDefaultButton.Button2);
+		MbYesNo | MbIconWarning | MbDefButton2);
 
-	if (confirmResult != DialogResult.Yes)
+	if (confirmResult != IdYes)
 	{
 		return;
 	}
@@ -50,19 +52,22 @@ try
 	TerminateRunningProcesses(mainExecutablePath);
 	ScheduleDirectoryDeletion(baseDirectory);
 
-	MessageBox.Show(
+	ShowMessage(
 		$"{ProductName} 已开始卸载。窗口关闭后会删除程序文件。",
 		$"卸载 {ProductName}",
-		MessageBoxButtons.OK,
-		MessageBoxIcon.Information);
+		MbOk | MbIconInformation);
 }
 catch (Exception ex)
 {
-	MessageBox.Show(
+	ShowMessage(
 		$"卸载失败：{ex.Message}",
 		$"卸载 {ProductName}",
-		MessageBoxButtons.OK,
-		MessageBoxIcon.Error);
+		MbOk | MbIconError);
+}
+
+static int ShowMessage(string text, string caption, uint type)
+{
+	return MessageBoxW(nint.Zero, text, caption, type);
 }
 
 static void RemoveStartupRegistration()
@@ -137,3 +142,6 @@ static void ScheduleDirectoryDeletion(string targetDirectory)
 		WorkingDirectory = Path.GetTempPath()
 	});
 }
+
+[DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+static extern int MessageBoxW(nint hWnd, string text, string caption, uint type);

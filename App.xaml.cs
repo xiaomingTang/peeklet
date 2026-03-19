@@ -2,11 +2,8 @@ using System.Drawing;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows;
-using System.Windows.Forms;
 using Peeklet.Services;
 using Application = System.Windows.Application;
-using NotifyIcon = System.Windows.Forms.NotifyIcon;
-using ContextMenuStrip = System.Windows.Forms.ContextMenuStrip;
 
 namespace Peeklet;
 
@@ -18,7 +15,8 @@ public partial class App : Application
 
 	private GlobalKeyboardHook? _keyboardHook;
 	private PreviewController? _previewController;
-	private NotifyIcon? _notifyIcon;
+	private NativeTrayIcon? _notifyIcon;
+	private Icon? _trayIcon;
 	private StatusWindow? _statusWindow;
 	private Mutex? _singleInstanceMutex;
 	private bool _ownsSingleInstanceMutex;
@@ -47,25 +45,20 @@ public partial class App : Application
 		_keyboardHook.EscapePressed += KeyboardHook_EscapePressed;
 		_keyboardHook.Install();
 
-		_notifyIcon = new NotifyIcon
-		{
-			Icon = LoadTrayIcon(),
-			Visible = true,
-			Text = "Peeklet"
-		};
-		_notifyIcon.DoubleClick += (_, _) => ShowStatusWindow();
-
-		var menu = new ContextMenuStrip();
-		menu.Items.Add("Open", null, (_, _) => ShowStatusWindow());
-		menu.Items.Add(new ToolStripSeparator());
-		menu.Items.Add("Exit", null, (_, _) => Shutdown());
-		_notifyIcon.ContextMenuStrip = menu;
+		_trayIcon = LoadTrayIcon();
+		_notifyIcon = new NativeTrayIcon(
+			"Peeklet",
+			_trayIcon,
+			ShowStatusWindow,
+			Shutdown);
 
 		if (Debugger.IsAttached)
 		{
-			_notifyIcon.BalloonTipTitle = "Peeklet";
-			_notifyIcon.BalloonTipText = "Debug mode is running in the tray. Select a file in Explorer and press Space.";
-			_notifyIcon.ShowBalloonTip(2500);
+			_notifyIcon.ShowBalloonTip(
+				"Peeklet",
+				"Debug mode is running in the tray. Select a file in Explorer and press Space.",
+				NativeTrayIconBalloonIcon.Info,
+				2500);
 		}
 
 		if (!e.Args.Contains(AppLaunchArguments.Background, StringComparer.OrdinalIgnoreCase))
@@ -97,9 +90,10 @@ public partial class App : Application
 
 		if (_notifyIcon is not null)
 		{
-			_notifyIcon.Visible = false;
 			_notifyIcon.Dispose();
 		}
+
+		_trayIcon?.Dispose();
 
 		base.OnExit(e);
 	}

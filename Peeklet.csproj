@@ -3,7 +3,6 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Peeklet</AssemblyName>
@@ -16,6 +15,7 @@
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.37.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.12" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,17 +44,42 @@
   </Target>
 
   <Target Name="PublishUninstaller" AfterTargets="Publish">
-    <MSBuild Projects="Uninstaller\Peeklet.Uninstaller.csproj"
-             Targets="Restore;Publish"
-             Properties="Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishSingleFile=true;PublishTrimmed=false;PublishProfile=;PublishDir=$(IntermediateOutputPath)UninstallerPublish\" />
+    <PropertyGroup>
+      <UninstallerPublishDir>$(IntermediateOutputPath)UninstallerPublish\</UninstallerPublishDir>
+    </PropertyGroup>
+
+    <Exec Command='dotnet publish &quot;Uninstaller\Peeklet.Uninstaller.csproj&quot; -c $(Configuration) -r $(RuntimeIdentifier) -p:SelfContained=$(SelfContained) -p:PublishSingleFile=true -p:PublishTrimmed=true -p:DebugType=none -p:DebugSymbols=false -o &quot;$(UninstallerPublishDir)&quot;' />
 
     <ItemGroup>
-      <PublishedUninstallerArtifacts Include="Uninstaller\$(IntermediateOutputPath)UninstallerPublish\Peeklet.Uninstaller.exe" />
+      <PublishedUninstallerArtifacts Include="$(UninstallerPublishDir)Peeklet.Uninstaller.exe" />
     </ItemGroup>
 
     <Copy SourceFiles="@(PublishedUninstallerArtifacts)"
           DestinationFolder="$(PublishDir)"
           SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="PrunePublishArtifacts" AfterTargets="Publish">
+    <ItemGroup>
+      <UnusedPublishArtifacts Include="$(PublishDir)Microsoft.VisualBasic.Forms.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)Microsoft.Web.WebView2.WinForms.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)Microsoft.Web.WebView2.WinForms.xml" />
+      <UnusedPublishArtifacts Include="$(PublishDir)Microsoft.Windows.SDK.NET.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)System.Windows.Forms.Design.Editors.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)System.Windows.Forms.Design.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)System.Windows.Forms.Primitives.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)System.Windows.Forms.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)WindowsFormsIntegration.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)WinRT.Runtime.dll" />
+
+      <UnusedPublishArtifacts Include="$(PublishDir)zh-Hans\Microsoft.VisualBasic.Forms.resources.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)zh-Hans\System.Windows.Forms.Design.resources.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)zh-Hans\System.Windows.Forms.Primitives.resources.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)zh-Hans\System.Windows.Forms.resources.dll" />
+      <UnusedPublishArtifacts Include="$(PublishDir)zh-Hans\WindowsFormsIntegration.resources.dll" />
+    </ItemGroup>
+
+    <Delete Files="@(UnusedPublishArtifacts)" />
   </Target>
   
 </Project>

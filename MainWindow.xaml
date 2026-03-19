@@ -110,7 +110,7 @@
                 Visibility="Collapsed"
                 CornerRadius="18"
                 ClipToBounds="True">
-          <wv2:WebView2 x:Name="BrowserPreview" />
+          <Grid x:Name="BrowserViewHost" />
         </Border>
 
         <Border x:Name="PreviewHandlerHost"

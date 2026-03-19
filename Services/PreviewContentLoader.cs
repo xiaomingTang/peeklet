@@ -92,12 +92,7 @@ public sealed class PreviewContentLoader
 
     private static async Task<PreviewContent> BuildPdfContentAsync(PreviewRequest request, CancellationToken cancellationToken)
     {
-        if (PreviewHandlerRegistry.TryGetHandlerClsid(request.FilePath, out _))
-        {
-            return BuildPreviewHandlerContent(request, "System PDF preview");
-        }
-
-        var pdfUri = new Uri(request.FilePath).AbsoluteUri;
+        var pdfUri = new Uri(request.FilePath).AbsoluteUri + "#toolbar=0&navpanes=0&scrollbar=0";
         var html = $@"
 <!DOCTYPE html>
 <html>
@@ -105,11 +100,11 @@ public sealed class PreviewContentLoader
         <meta charset=""utf-8"" />
         <style>
             html, body {{ margin: 0; height: 100%; overflow: hidden; background: #0f1115; }}
-            embed, iframe {{ border: 0; width: 100%; height: 100%; display: block; }}
+            iframe {{ border: 0; width: 100%; height: 100%; display: block; }}
         </style>
     </head>
     <body>
-        <embed src=""{pdfUri}#toolbar=0&navpanes=0&scrollbar=0"" type=""application/pdf"" />
+        <iframe src=""{pdfUri}""></iframe>
     </body>
 </html>";
 

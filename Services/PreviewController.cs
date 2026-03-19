@@ -114,6 +114,7 @@ public sealed class PreviewController
 
         var window = _window;
         var operationId = ++_showOperationId;
+        using var autoCloseSuppression = window.SuppressAutoClose();
 
         window.ApplyPlacement(placement);
         window.ShowLoadingState(request.FileName, FormatLoadingSubtitle(request), "Loading preview...");
